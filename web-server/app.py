@@ -1,10 +1,14 @@
 import paho.mqtt.client as mqtt
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
+import csv
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
+
+with open('data.csv', mode='w') as data:
+    data_writer = csv.writer(data, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -14,6 +18,7 @@ def on_connect(client, userdata, flags, rc):
     # reconnect then subscriptions will be renewed.
     client.subscribe("/esp8266/temperature")
     client.subscribe("/esp8266/humidity")
+    client.subscribe("/esp8266/ldr")
 
 # The callback for when a PUBLISH message is received from the ESP8266.
 def on_message(client, userdata, message):
@@ -21,11 +26,19 @@ def on_message(client, userdata, message):
     print("Received message '" + str(message.payload) + "' on topic '"
         + message.topic + "' with QoS " + str(message.qos))
     if message.topic == "/esp8266/temperature":
+        data_writer.writerow(['temperature', 'dht_temperature'])
         print("temperature update")
 	socketio.emit('dht_temperature', {'data': message.payload})
     if message.topic == "/esp8266/humidity":
+        data_writer.writerow(['humidity', 'dht_humidity'])
         print("humidity update")
 	socketio.emit('dht_humidity', {'data': message.payload})
+    if message.topic == "/esp8266/ldr":
+        data_writer.writerow(['ldr', 'ldr_value'])
+        print("ldr update")
+	socketio.emit('ldr_value', {'data': message.payload})
+
+
 
 mqttc=mqtt.Client()
 mqttc.on_connect = on_connect
@@ -48,6 +61,11 @@ templateData = {
 def main():
    # Pass the template data into the template main.html and return it to the user
    return render_template('main.html', async_mode=socketio.async_mode, **templateData)
+
+@app.route('/valueofslider')
+def slide():
+    a = request.args.get('a')
+    print (a)
 
 # The function below is executed when someone requests a URL with the pin number and action in it:
 @app.route("/<board>/<changePin>/<action>")
@@ -74,4 +92,4 @@ def handle_my_custom_event(json):
     print('received json data here: ' + str(json))
 
 if __name__ == "__main__":
-   socketio.run(app, host='0.0.0.0', port=8181, debug=True)
+   socketio.run(app, host='0.0.0.0', port=7014, debug=True)
