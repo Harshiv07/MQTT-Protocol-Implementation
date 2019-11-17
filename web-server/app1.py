@@ -1,15 +1,10 @@
 import paho.mqtt.client as mqtt
 from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, emit
-import csv
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
-
-with open('data1.csv', mode='w') as data1:
-    data1_writer = csv.writer(data1, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -20,6 +15,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("/esp8266/temperature1")
     client.subscribe("/esp8266/humidity1")
     client.subscribe("/esp8266/ldr1")
+    client.subscribe("/esp8266/mq1")
 
 # The callback for when a PUBLISH message is received from the ESP8266.
 def on_message(client, userdata, message):
@@ -27,17 +23,17 @@ def on_message(client, userdata, message):
     print("Received message '" + str(message.payload) + "' on topic '"
         + message.topic + "' with QoS " + str(message.qos))
     if message.topic == "/esp8266/temperature1":
-        data1_writer.writerow(['temperature1', 'dht_temperature1'])
         print("temperature update")
-	socketio.emit('dht_temperature1', {'data': message.payload})
+	socketio.emit('dht_temperature', {'data': message.payload})
     if message.topic == "/esp8266/humidity1":
-        data_writer.writerow(['humidity1', 'dht_humidity1'])
         print("humidity update")
-	socketio.emit('dht_humidity1', {'data': message.payload})
+	socketio.emit('dht_humidity', {'data': message.payload})
     if message.topic == "/esp8266/ldr1":
-        data_writer.writerow(['ldr', 'ldr_value1'])
         print("ldr update")
-	socketio.emit('ldr_value1', {'data': message.payload})
+	socketio.emit('ldr_value', {'data': message.payload})
+    if message.topic == "/esp8266/mq1":
+        print("MQ1 update")
+	socketio.emit('mq_1', {'data': message.payload})
 
 mqttc=mqtt.Client()
 mqttc.on_connect = on_connect

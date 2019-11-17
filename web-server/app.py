@@ -1,19 +1,14 @@
 import paho.mqtt.client as mqtt
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
-import csv
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
-with open('data.csv', mode='w') as data:
-    data_writer = csv.writer(data, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
     client.subscribe("/esp8266/temperature")
@@ -26,15 +21,12 @@ def on_message(client, userdata, message):
     print("Received message '" + str(message.payload) + "' on topic '"
         + message.topic + "' with QoS " + str(message.qos))
     if message.topic == "/esp8266/temperature":
-        data_writer.writerow(['temperature', 'dht_temperature'])
         print("temperature update")
 	socketio.emit('dht_temperature', {'data': message.payload})
     if message.topic == "/esp8266/humidity":
-        data_writer.writerow(['humidity', 'dht_humidity'])
         print("humidity update")
 	socketio.emit('dht_humidity', {'data': message.payload})
     if message.topic == "/esp8266/ldr":
-        data_writer.writerow(['ldr', 'ldr_value'])
         print("ldr update")
 	socketio.emit('ldr_value', {'data': message.payload})
 
@@ -92,4 +84,4 @@ def handle_my_custom_event(json):
     print('received json data here: ' + str(json))
 
 if __name__ == "__main__":
-   socketio.run(app, host='0.0.0.0', port=7014, debug=True)
+   socketio.run(app, host='0.0.0.0', port=7015, debug=True)
