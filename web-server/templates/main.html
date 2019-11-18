@@ -65,6 +65,9 @@
          socket.on('ldr_value', function(msg) {
           $('#ldrVal').text(msg.data).html();
       	});
+        socket.on('mq_1', function(msg) {
+         $('#mq1').text(msg.data).html();
+       });
       });
    </script>
 </head>
@@ -103,5 +106,6 @@
    <h3>Temperature: <span id="temperature"></span>ºC</h3>
    <h3>Humidity: <span id="humidity"></span>%</h3>
    <h3>LDR Value: <span id="ldrVal"></span></h3>
+   <h3>Gas sensor: <span id="mq1"></span>ppm</h3>
 </body>
 </html>
