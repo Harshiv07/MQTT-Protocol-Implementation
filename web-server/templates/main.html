@@ -48,13 +48,15 @@
    <meta name="viewport" content="width=device-width, initial-scale=1">
    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
    <script type="text/javascript" charset="utf-8">
-      $(document).ready(function() {
+   var ldv=30;
+
+      $(document).ready(function socketing() {
       	var socket = io.connect('http://' + document.domain + ':' + location.port);
       	socket.on('connect', function() {
           socket.emit('my event', {data: 'I\'m connected!'});
       	});
       	socket.on('dht_temperature', function(msg) {
-	  var nDate = new Date();
+	         var nDate = new Date();
           $('#readingsUpdated').text(nDate.getHours() + 'h:' + nDate.getMinutes() +
              'm:' + nDate.getSeconds() + 's').html();
           $('#temperature').text(msg.data).html();
@@ -63,6 +65,7 @@
           $('#humidity').text(msg.data).html();
       	});
          socket.on('ldr_value', function(msg) {
+           ldv=msg.data;
           $('#ldrVal').text(msg.data).html();
       	});
         socket.on('mq_1', function(msg) {
@@ -72,6 +75,7 @@
    </script>
 </head>
 
+<html>
 <body>
    <h1>RPi Web Server - ESP8266 MQTT</h1>
    <form action="/submit" method="post">
@@ -83,6 +87,74 @@
       </div>
    </form>
 
+   	<script type="text/javascript">
+   	window.onload = function () {
+         var dps = [{x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0}, {x: 4, y: 0}, {x: 5, y: 0},{x: 6, y: 0}, {x: 7, y: 0},
+           {x: 8, y: 0}, {x: 9, y: 0}, {x: 10, y: 0}];   //dataPoints.
+         var chart = new CanvasJS.Chart("chartContainer",{
+         	title :{
+         		text: "Live Data"
+         	},
+         	axisX: {
+         		title: "Axis X Title"
+         	},
+         	axisY: {
+         		title: "Units"
+         	},
+         	data: [{
+         		type: "line",
+         		dataPoints : dps
+         	}]
+         });
+         chart.render();
+         var xVal = dps.length + 1;
+         var yVal = ldv;
+         var updateInterval = 1000;
+         var updateChart = function () {
+         	//yVal = yVal +  Math.round(5 + Math.random() *(-5-5));
+
+           yVal =parseInt(ldv);
+         	dps.push({x: xVal,y: yVal});
+          console.log(yVal);
+         	xVal++;
+         	if (dps.length >  10 ){
+         		dps.shift();
+         	}
+         	chart.render();
+   	// update chart after specified time.
+   };
+   setInterval(function(){updateChart()}, updateInterval);
+   }
+   </script>
+   <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+   <div class="row">
+     <div class="col-md-6">
+       {% for pin in pins %}
+       <h2>{{ pins[pin].name }}
+       {% if pins[pin].state == 'True' %}
+          is currently <strong>on</strong></h2><div class="row"><div class="col-md-2">
+          <a href="/esp8266/{{pin}}/0" class="btn btn-lblock btn-lg btn-default" role="button">Turn off</a></div></div>
+       {% else %}
+          is currently <strong>off</strong></h2><div class="row"><div class="col-md-2">
+          <a href="/esp8266/{{pin}}/1" class="btn btn-block btn-lg btn-primary" role="button">Turn on</a></div></div>
+       {% endif %}
+       {% endfor %}
+       <h3>DHT Readings (updated <span id="readingsUpdated"></span>)</h3>
+       <h3>Temperature: <span id="temperature"></span>ºC</h3>
+       <h3>Humidity: <span id="humidity"></span>%</h3>
+       <h3>LDR Value: <span id="ldrVal"></span></h3>
+       <h3>Gas sensor: <span id="mq1"></span>ppm</h3>
+     </div>
+     <div class="col-md-6">
+
+          	<div id="chartContainer" style="height: 300px; width: 100%;">
+          	</div>
+     </div>
+   </div>
+
+
+
    <script>
       var slider = document.getElementById("myRange");
       var output = document.getElementById("demo");
@@ -92,20 +164,6 @@
         output.innerHTML = this.value;
       }
    </script>
-   {% for pin in pins %}
-   <h2>{{ pins[pin].name }}
-   {% if pins[pin].state == 'True' %}
-      is currently <strong>on</strong></h2><div class="row"><div class="col-md-2">
-      <a href="/esp8266/{{pin}}/0" class="btn btn-lblock btn-lg btn-default" role="button">Turn off</a></div></div>
-   {% else %}
-      is currently <strong>off</strong></h2><div class="row"><div class="col-md-2">
-      <a href="/esp8266/{{pin}}/1" class="btn btn-block btn-lg btn-primary" role="button">Turn on</a></div></div>
-   {% endif %}
-   {% endfor %}
-   <h3>DHT Readings (updated <span id="readingsUpdated"></span>)</h3>
-   <h3>Temperature: <span id="temperature"></span>ºC</h3>
-   <h3>Humidity: <span id="humidity"></span>%</h3>
-   <h3>LDR Value: <span id="ldrVal"></span></h3>
-   <h3>Gas sensor: <span id="mq1"></span>ppm</h3>
+
 </body>
 </html>
