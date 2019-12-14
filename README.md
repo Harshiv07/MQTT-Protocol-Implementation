@@ -17,8 +17,10 @@ pi@raspberrypi ~ $ sudo apt-get install python-pip python-flask git-core
 ```
 ### Then, you use pip to install Flask and Paho MQTT:
 
+```bash
 pi@raspberrypi ~ $ sudo pip install flask
 pi@raspberrypi ~ $ sudo pip install paho-mqtt
+```
 
 ## Installing SocketIO
 
